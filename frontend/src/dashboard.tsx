@@ -12,7 +12,7 @@ export const Dashboard : React.FC = () => {
     const [socket,setsocket] = useState<any>(null)
 
     useEffect(() => {
-        const newsocket = io("localhost:3000",{
+        const newsocket = io("todo-server-production-4611.up.railway.app",{
                 transports: ['websocket', 'polling'],
                 reconnection: true,
                 reconnectionAttempts: 5,
