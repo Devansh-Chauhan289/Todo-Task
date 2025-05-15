@@ -71,7 +71,7 @@ export const Dashboard : React.FC = () => {
                             notes ? (
                                 notes.map((note : any) => {
                                     return (
-                                        <div key={note._id} className="flex flex-col gap-2">
+                                        <div  className="flex flex-col gap-2">
                                             <h2 className="text-xl my-3 ">{note.task}</h2>
                                             <hr />
                                         </div>
