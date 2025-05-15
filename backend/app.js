@@ -26,7 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
     origin: "http://localhost:5173",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST","DELETE"],
     credentials: true,
 }));
 
@@ -51,8 +51,9 @@ io.on("connection", (socket) => {
 
             tasks.push(data);
             console.log("Tasks", tasks);
+            console.log("data",data);
 
-            if (tasks.length >= 5) {
+            if (tasks.length >= 3) {
                 for (const t of tasks) {
                     await new Task({ task: t.task }).save();
                 }
@@ -60,14 +61,13 @@ io.on("connection", (socket) => {
                 await client.set(REDIS_KEY, JSON.stringify([]));
                 console.log("Tasks moved");
 
+                io.emit("tasks-fetched", [data]);
                 
-                const mongoTasks = await Task.find().sort({ _id: -1 });
-                io.emit("tasks-fetched", mongoTasks);
             } else {
                 await client.set(REDIS_KEY, JSON.stringify(tasks));
                 console.log("Task stored in Redis:", tasks);
 
-                io.emit("task-added", tasks);
+                io.emit("tasks-fetched", [data]);
             }
         } catch (error) {
             console.log("Error adding task:", error);
@@ -77,15 +77,18 @@ io.on("connection", (socket) => {
     socket.on("get-tasks", async () => {
         try {
             let taskData = await client.get(REDIS_KEY);
-            let mongotasks = await Task.find()
+            let mongotasks = await Task.find().sort({_id : -1})
+            let alltasks = [];
             if (taskData) {
                 taskData = JSON.parse(taskData);
-                taskData = [...taskData, ...mongotasks];
+                alltasks = [...mongotasks,...taskData];
+                console.log("contains task form redis");
             } else {
-                taskData = mongotasks;
+                alltasks = mongotasks;
+                console.log("only mongo task");
             }
             
-            socket.emit("tasks-fetched", taskData ? taskData : []);
+            io.emit("tasks-fetched", alltasks ? alltasks : []);
         } catch (error) {
             console.log("Error getting tasks:", error);
         }
